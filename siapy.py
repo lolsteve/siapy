@@ -56,7 +56,9 @@ class Sia:
         return files.get('files')
 
     def upload_file(self, path, siapath):
-        """Uploads a file to sia."""
+        """Uploads a file to sia.
+        Return True on success.
+        """
         payload = { 'source': path }
         resp = self.http_post('/renter/upload/' + siapath, payload)
         return resp
