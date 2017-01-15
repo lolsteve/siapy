@@ -24,13 +24,16 @@ class Sia:
         """
         self.port = port
 
-    def http_get(self, path):
+    def http_get(self, path, data=None):
         """Helper HTTP GET request function.
         Sends HTTP GET request to given path.
         """
         url = self.address + ':' + str(self.port) + path
-        resp = requests.get(url, headers=self.headers)
-        if resp.status_code != 200:
+        if data is not None:
+            resp = requests.get(url, headers=self.headers, files=data)
+        else:
+            resp = requests.get(url, headers=self.headers)
+        if resp.status_code is not requests.codes.ok:
             raise SiaError(resp.status_code, resp.json().get('message'))
         return resp.json()
 
@@ -41,7 +44,7 @@ class Sia:
         """
         url = self.address + ':' + str(self.port) + path
         resp = requests.post(url, headers=self.headers, data=data)
-        if resp.status_code not in (200, 204):
+        if resp.status_code != requests.codes.ok:
             raise SiaError(resp.status_code, resp.json().get('message'))
         return True
 
@@ -54,6 +57,14 @@ class Sia:
         """Returns a list of all files."""
         files = self.http_get('/renter/files')
         return files.get('files')
+
+    def download_file(self, path, siapath):
+        """Downloads a file from sia.
+        Returns True on success.
+        """
+        payload = { 'destination': (None, path) }
+        resp = self.http_get('/renter/download/'+ siapath, payload)
+        return resp
 
     def upload_file(self, path, siapath):
         """Uploads a file to sia.
