@@ -51,6 +51,11 @@ class Sia:
         version = self.http_get('/daemon/version')
         return version.get('version')
 
+    def get_consensus(self):
+        """Returns information about the consensus set"""
+        consensus = self.http_get('/consensus')
+        return consensus
+
     def get_files(self):
         """Returns a list of all files."""
         files = self.http_get('/renter/files')
