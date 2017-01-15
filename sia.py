@@ -40,13 +40,11 @@ class Sia:
     def http_post(self, path, data):
         """Helper HTTP POST request function.
         Sends HTTP POST request to given path with given payload.
-        Returns True on success.
         """
         url = self.address + ':' + str(self.port) + path
         resp = requests.post(url, headers=self.headers, data=data)
         if resp.status_code != requests.codes.ok:
             raise SiaError(resp.status_code, resp.json().get('message'))
-        return True
 
     def get_version(self):
         """Returns the version of siad running."""
@@ -60,19 +58,15 @@ class Sia:
 
     def download_file(self, path, siapath):
         """Downloads a file from sia.
-        Returns True on success.
         """
         payload = { 'destination': (None, path) }
-        resp = self.http_get('/renter/download/'+ siapath, payload)
-        return resp
+        self.http_get('/renter/download/'+ siapath, payload)
 
     def upload_file(self, path, siapath):
         """Uploads a file to sia.
-        Return True on success.
         """
         payload = { 'source': path }
-        resp = self.http_post('/renter/upload/' + siapath, payload)
-        return resp
+        self.http_post('/renter/upload/' + siapath, payload)
 
 class SiaError(Exception):
 
