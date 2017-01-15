@@ -1,3 +1,4 @@
+import sys
 import requests
 
 class Sia:
@@ -29,22 +30,23 @@ class Sia:
         Sends HTTP GET request to given path.
         """
         url = self.address + ':' + str(self.port) + path
-        if data is not None:
-            resp = requests.get(url, headers=self.headers, files=data)
-        else:
-            resp = requests.get(url, headers=self.headers)
-        if resp.status_code is not requests.codes.ok:
-            raise SiaError(resp.status_code, resp.json().get('message'))
+        resp = requests.get(url, headers=self.headers, files=data)
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise SiaError(resp.status_code, resp.json().get('message')) from e
         return resp.json()
 
-    def http_post(self, path, data):
+    def http_post(self, path, data=None):
         """Helper HTTP POST request function.
         Sends HTTP POST request to given path with given payload.
         """
         url = self.address + ':' + str(self.port) + path
         resp = requests.post(url, headers=self.headers, data=data)
-        if resp.status_code != requests.codes.ok:
-            raise SiaError(resp.status_code, resp.json().get('message'))
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise SiaError(resp.status_code, resp.json().get('message')) from e
 
     def get_version(self):
         """Returns the version of siad running."""
@@ -96,6 +98,27 @@ class Sia:
         """
         payload = { 'source': path }
         self.http_post('/renter/upload/' + siapath, payload)
+
+    def get_wallet(self):
+        """Returns information aout the wallet."""
+        return self.http_get('/wallet')
+
+    def get_address(self):
+        """Returns a single address from the wallet."""
+        return self.http_get('/wallet/address').get('address')
+
+    def get_addresses(self):
+        """Returns a list of addresses from the wallet."""
+        return self.http_get('/wallet/addresses').get('addresses')
+
+    def lock_wallet(self):
+        """Locks the wallet."""
+        self.http_post('/wallet/lock')
+
+    def unlock_wallet(self, encryptionpassword):
+        """Unlocks the wallet."""
+        payload = { 'encryptionpassword' : encryptionpassword }
+        self.http_post('/wallet/unlock', payload)
 
 class SiaError(Exception):
 
