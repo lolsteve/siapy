@@ -52,14 +52,38 @@ class Sia:
         return version.get('version')
 
     def get_consensus(self):
-        """Returns information about the consensus set"""
-        consensus = self.http_get('/consensus')
-        return consensus
+        """Returns information about the consensus set."""
+        return self.http_get('/consensus')
+
+    def get_gateway(self):
+        """Returns information aout the gateway."""
+        return self.http_get('/gateway')
+
+    def get_host(self):
+        """Returns information about the host."""
+        return self.http_get('/host')
 
     def get_files(self):
         """Returns a list of all files."""
         files = self.http_get('/renter/files')
         return files.get('files')
+
+    def get_hostdb(self):
+        """Returns list of all known hosts."""
+        return self.http_get('/hostdb/all').get('hosts')
+
+    def get_hostdb_active(self, numhosts=None):
+        """Returns list of active hosts.
+        Optional parameter numhosts for maximum number of hosts returned.
+        """
+        payload = None
+        if numhosts is not None:
+            payload = { 'numhosts' : (None, str(numhosts)) }
+        return self.http_get('/hostdb/active', payload).get('hosts')
+
+    def get_renter(self):
+        """Returns information about the renter."""
+        return self.http_get('/renter')
 
     def download_file(self, path, siapath):
         """Downloads a file from sia.
