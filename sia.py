@@ -245,12 +245,12 @@ class Sia:
         return self.http_get('/wallet/seeds', payload)
 
     def send_siacoins(self, amount, address):
-        payload = { 'amount' : amount, 'address' : address }
-        return self.http_post('/wallet/siacoins', payload)
+        payload = { 'amount' : amount, 'destination' : address }
+        return self.http_post('/wallet/siacoins', payload).get('transactionids')
 
     def send_siafunds(self, amount, address):
-        payload = { 'amount' : amount, 'address' : address }
-        return self.http_post('/wallet/siacfunds', payload)
+        payload = { 'amount' : amount, 'destination' : address }
+        return self.http_post('/wallet/siacfunds', payload).get('transactionids')
 
     def load_siagkey(self, encryptionpassword, keyfiles):
         payload = { 'encryptionpassword' : encryptionpassword,
