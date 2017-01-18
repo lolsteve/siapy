@@ -2,6 +2,8 @@
 
 Sia API bindings for Python 3
 
+This is a WIP
+
 ## Dependancies
 
 [requests](https://github.com/kennethreitz/requests)
