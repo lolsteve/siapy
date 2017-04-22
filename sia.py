@@ -1,7 +1,6 @@
 import requests
 
 class Sia:
-
     address = 'http://localhost'
     port = 9980
     headers = {
@@ -101,7 +100,7 @@ class Sia:
         """Announces the host to the network as a source of storage."""
         payload = None
         if netaddress is not None:
-            payload = { 'netaddress' : netaddress }
+            payload = {'netaddress': netaddress}
         self.http_post('/host/announce', payload)
 
     def host_storage(self):
@@ -110,17 +109,17 @@ class Sia:
 
     def host_storage_add(self, path, size):
         """Adds a storage folder to the manager."""
-        payload = { 'path' : path, 'size' : size }
+        payload = {'path': path, 'size': size}
         self.http_post('/host/storage/folders/add', payload)
 
     def host_storage_remove(self, path, force=False):
         """Removes a folder from the storage manager."""
-        payload = { 'path' : path, 'force' : force }
+        payload = {'path': path, 'force': force}
         self.http_post('/host/storage/folders/remove', payload)
 
     def host_storage_resize(self, path, size):
         """Resizes a folder in the manager."""
-        payload = { 'path' : path, 'size' : size }
+        payload = {'path': path, 'size': size}
         self.http_post('/host/storage/folder/resize', payload)
 
     def host_storage_sector_delete(self, merkleroot):
@@ -139,8 +138,14 @@ class Sia:
         """
         payload = None
         if numhosts is not None:
-            payload = { 'numhosts' : (None, str(numhosts)) }
+            payload = {'numhosts': (None, str(numhosts))}
         return self.http_get('/hostdb/active', payload).get('hosts')
+
+    def get_hostdb_host(self,pubkey):
+        """fetches detailed information about a particular host, including metrics regarding the score of the host within the database
+        It should be noted that each renter uses different metrics for selecting hosts, and that a good score on in one hostdb does not mean that the host will be successful on the network overall.
+        """
+        return self.http_get('/hostdb/hosts/'+pubkey)
 
     """Miner API"""
 
@@ -168,6 +173,10 @@ class Sia:
         """Returns current renter settings."""
         return self.http_get('/renter')
 
+    def get_renter_prices(self):
+        """Returns current renter settings."""
+        return self.http_get('/renter/prices')
+
     def get_renter_contracts(self):
         """Returns a list of active contracts."""
         return self.http_get('/renter/contracts').get('contracts')
@@ -188,18 +197,18 @@ class Sia:
     def download_file(self, path, siapath):
         """Downloads a file from sia.
         """
-        payload = { 'destination': (None, path) }
-        self.http_get('/renter/download/'+ siapath, payload)
+        payload = {'destination': (None, path)}
+        self.http_get('/renter/download/' + siapath, payload)
 
     def rename_file(self, siapath, newsiapath):
         """Renames a file."""
-        payload = { 'newsiapath' : newsiapath }
+        payload = {'newsiapath': newsiapath}
         self.http_post('/renter/rename/' + siapath, payload)
 
     def upload_file(self, path, siapath):
         """Uploads a file to sia.
         """
-        payload = { 'source': path }
+        payload = {'source': path}
         self.http_post('/renter/upload/' + siapath, payload)
 
     """Wallet API"""
@@ -209,7 +218,7 @@ class Sia:
         return self.http_get('/wallet')
 
     def load_033x(self, source, encryptionpassword):
-        payload = { 'source' : source, 'encryptionpassword' : encryptionpassword }
+        payload = {'source': source, 'encryptionpassword': encryptionpassword}
         self.http_post('/wallet/033x', payload)
 
     def get_address(self):
@@ -222,7 +231,7 @@ class Sia:
 
     def backup_wallet(self, destination):
         """Creates a backup of the wallet settings."""
-        payload = { 'destination' : destination }
+        payload = {'destination': destination}
         return self.http_get('/wallet/backup', payload)
 
     def wallet_init(self, encryptionpassword=None):
@@ -231,30 +240,30 @@ class Sia:
         """
         payload = None
         if encryptionpassword is not None:
-            payload = { 'encryptionpassword' : encryptionpassword }
+            payload = {'encryptionpassword': encryptionpassword}
         return self.http_post('/wallet/init', payload).get('primaryseed')
 
     def wallet_load_seed(self, encryptionpassword, seed, dictionary='english'):
-        payload = { 'encryptionpassword' : encryptionpassword,
-                   'dictionary' : dictionary,
-                   'seed' :  seed }
+        payload = {'encryptionpassword': encryptionpassword,
+                   'dictionary': dictionary,
+                   'seed': seed}
         self.http_post('/wallet/seed', payload)
 
     def wallet_seeds(self, dictionary='english'):
-        payload = { 'dictionary' : dictionary }
+        payload = {'dictionary': dictionary}
         return self.http_get('/wallet/seeds', payload)
 
     def send_siacoins(self, amount, address):
-        payload = { 'amount' : amount, 'destination' : address }
+        payload = {'amount': amount, 'destination': address}
         return self.http_post('/wallet/siacoins', payload).get('transactionids')
 
     def send_siafunds(self, amount, address):
-        payload = { 'amount' : amount, 'destination' : address }
+        payload = {'amount': amount, 'destination': address}
         return self.http_post('/wallet/siacfunds', payload).get('transactionids')
 
     def load_siagkey(self, encryptionpassword, keyfiles):
-        payload = { 'encryptionpassword' : encryptionpassword,
-                   'keyfiles' : keyfiles }
+        payload = {'encryptionpassword': encryptionpassword,
+                   'keyfiles': keyfiles}
         self.http_post('/wallet/siagkey', payload)
 
     def lock_wallet(self):
@@ -262,10 +271,10 @@ class Sia:
         self.http_post('/wallet/lock')
 
     def get_transaction(self, transaction_id):
-        return self.http_get('/wallet/transaction/' + transaction_id, payload).get('transaction')
+        return self.http_get('/wallet/transaction/' + transaction_id).get('transaction')
 
     def get_transactions(self, startheight, endheight):
-        payload = { 'startheight' : startheight, 'endheight' : endheight }
+        payload = {'startheight': startheight, 'endheight': endheight}
         return self.http_get('/wallet/transactions', payload)
 
     def get_transactions_related(self, address):
@@ -274,11 +283,11 @@ class Sia:
 
     def unlock_wallet(self, encryptionpassword):
         """Unlocks the wallet."""
-        payload = { 'encryptionpassword' : encryptionpassword }
+        payload = {'encryptionpassword': encryptionpassword}
         self.http_post('/wallet/unlock', payload)
 
-class SiaError(Exception):
 
+class SiaError(Exception):
     def __init__(self, status_code, message):
         self.status_code = status_code
         self.message = message
