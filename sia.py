@@ -183,7 +183,7 @@ class Sia:
 
     def get_downloads(self):
         """Returns a list of files in the download queue."""
-        return self.http_get('renter/downloads').get('downloads')
+        return self.http_get('/renter/downloads').get('downloads')
 
     def get_files(self):
         """Returns a list of all files."""
@@ -274,8 +274,7 @@ class Sia:
         return self.http_get('/wallet/transaction/' + transaction_id).get('transaction')
 
     def get_transactions(self, startheight, endheight):
-        payload = {'startheight': startheight, 'endheight': endheight}
-        return self.http_get('/wallet/transactions', payload)
+        return self.http_get('/wallet/transactions?startheight=%d&endheight=%d' % (startheight, endheight))
 
     def get_transactions_related(self, address):
         """Returns a list of transactions related to the given address."""
