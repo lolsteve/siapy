@@ -24,21 +24,28 @@ class Sia:
         self.port = port
 
     def http_get(self, path, data=None):
-        """Helper HTTP GET request function.
-        Sends HTTP GET request to given path.
-        Attempts to return json decoded dict.
-        Returns whole response if response is not json encoded.
+        """Helper HTTP GET request function that returns a decoded json dict.
         """
         url = self.address + ':' + str(self.port) + path
         resp = requests.get(url, headers=self.headers, files=data)
         try:
             resp.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            raise SiaError(resp.status_code, resp.json().get('message')) from e
+        except requests.exceptions.HTTPError:
+            raise SiaError(resp.status_code, resp.json().get('message'))
+        return resp.json()
+
+
+    def http_get_bytes(self, path, data=None):
+        """Helper HTTP GET request function that returns a byte array.
+        """
+        url = self.address + ':' + str(self.port) + path
+        resp = requests.get(url, headers=self.headers, files=data)
         try:
-            return resp.json()
-        except ValueError as e:
-            return resp
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise SiaError(resp.status_code, resp.json().get('message'))
+        return resp
+
 
     def http_post(self, path, data=None):
         """Helper HTTP POST request function.
@@ -48,11 +55,11 @@ class Sia:
         resp = requests.post(url, headers=self.headers, data=data)
         try:
             resp.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            raise SiaError(resp.status_code, resp.json().get('message')) from e
+        except requests.exceptions.HTTPError:
+            raise SiaError(resp.status_code, resp.json().get('message'))
         try:
             return resp.json()
-        except ValueError as e:
+        except ValueError:
             return resp
 
     """Daemon API"""
@@ -76,6 +83,13 @@ class Sia:
         """Returns information about the consensus set."""
         return self.http_get('/consensus')
 
+    def validate_transactionset(self, transactionset):
+        """Validates a set of transactions using the current utxo set.
+        """
+        #TODO: I'm not really sure what this does. Attempting to use this
+        #method just returns the response "Method Not Allowed"
+        return self.http_post('/consensus/validate/transactionset', transactionset)
+
     """Gateway API"""
 
     def get_gateway(self):
@@ -96,12 +110,17 @@ class Sia:
         """Returns information about the host."""
         return self.http_get('/host')
 
+    def set_host(self, host_settings):
+        """Configures hosting parameters.
+        """
+        return self.http_post('/host', host_settings)
+
     def host_announce(self, netaddress=None):
         """Announces the host to the network as a source of storage."""
         payload = None
         if netaddress is not None:
             payload = {'netaddress': netaddress}
-        self.http_post('/host/announce', payload)
+        return self.http_post('/host/announce', payload)
 
     def host_storage(self):
         """Returns a list of folders tracked by the storage manager."""
@@ -110,21 +129,27 @@ class Sia:
     def host_storage_add(self, path, size):
         """Adds a storage folder to the manager."""
         payload = {'path': path, 'size': size}
-        self.http_post('/host/storage/folders/add', payload)
+        return self.http_post('/host/storage/folders/add', payload)
 
     def host_storage_remove(self, path, force=False):
         """Removes a folder from the storage manager."""
         payload = {'path': path, 'force': force}
-        self.http_post('/host/storage/folders/remove', payload)
+        return self.http_post('/host/storage/folders/remove', payload)
 
     def host_storage_resize(self, path, size):
         """Resizes a folder in the manager."""
         payload = {'path': path, 'size': size}
-        self.http_post('/host/storage/folder/resize', payload)
+        return self.http_post('/host/storage/folder/resize', payload)
 
     def host_storage_sector_delete(self, merkleroot):
         """Deletes a sector from the manager."""
-        self.http_post('/host/storage/sector/' + merkleroot)
+        return self.http_post('/host/storage/sector/' + merkleroot)
+
+    def host_estimatescore(self, host_settings=None):
+        """Returns the estimated HostDB score of the host using its current
+        settings, combined with the provided settings.
+        """
+        return self.http_get('/host/estimatescore', host_settings)
 
     """HostDB API"""
 
@@ -141,11 +166,11 @@ class Sia:
             payload = {'numhosts': (None, str(numhosts))}
         return self.http_get('/hostdb/active', payload).get('hosts')
 
-    def get_hostdb_host(self,pubkey):
-        """fetches detailed information about a particular host, including metrics regarding the score of the host within the database
-        It should be noted that each renter uses different metrics for selecting hosts, and that a good score on in one hostdb does not mean that the host will be successful on the network overall.
+    def get_hostdb_host(self, pubkey):
+        """Fetches detailed information about a particular host, including
+        metrics regarding the score of the host within the database
         """
-        return self.http_get('/hostdb/hosts/'+pubkey)
+        return self.http_get('/hostdb/hosts/' + pubkey)
 
     """Miner API"""
 
@@ -164,8 +189,16 @@ class Sia:
     def get_block_header(self):
         """Returns a block header for mining.
         Returned as bytes.
+        Byte formatting: https://github.com/NebulousLabs/Sia/blob/master/doc/api/Miner.md#byte-response
         """
-        return self.http_get('/miner/header').content
+        return self.http_get_bytes('/miner/header').content
+
+    def post_block_header(self, header):
+        """Submits a header that has passed the POW.
+        Must be sent as bytes.
+        Byte formatting: https://github.com/NebulousLabs/Sia/blob/master/doc/api/Miner.md#byte-response
+        """
+        return self.http_post('/miner/header', header)
 
     """Renter API"""
 
@@ -218,6 +251,8 @@ class Sia:
         return self.http_get('/wallet')
 
     def load_033x(self, source, encryptionpassword):
+        """Loads a v0.3.3.x wallet into the current wallet.
+        """
         payload = {'source': source, 'encryptionpassword': encryptionpassword}
         self.http_post('/wallet/033x', payload)
 
@@ -244,36 +279,52 @@ class Sia:
         return self.http_post('/wallet/init', payload).get('primaryseed')
 
     def wallet_load_seed(self, encryptionpassword, seed, dictionary='english'):
+        """Gives the wallet a seed to track when looking for incoming transactions
+        """
         payload = {'encryptionpassword': encryptionpassword,
                    'dictionary': dictionary,
                    'seed': seed}
-        self.http_post('/wallet/seed', payload)
+        return self.http_post('/wallet/seed', payload)
 
     def wallet_seeds(self, dictionary='english'):
+        """Returns the list of seeds in use by the wallet
+        """
         payload = {'dictionary': dictionary}
         return self.http_get('/wallet/seeds', payload)
 
     def send_siacoins(self, amount, address):
+        """Sends siacoins to an address or set of addresses
+        Returns list of transaction IDs
+        """
         payload = {'amount': amount, 'destination': address}
         return self.http_post('/wallet/siacoins', payload).get('transactionids')
 
     def send_siafunds(self, amount, address):
+        """Sends siafunds to an address
+        Returns a list of transaction IDs
+        """
         payload = {'amount': amount, 'destination': address}
         return self.http_post('/wallet/siacfunds', payload).get('transactionids')
 
     def load_siagkey(self, encryptionpassword, keyfiles):
+        """Loads a key into the wallet that was generated by siag
+        """
         payload = {'encryptionpassword': encryptionpassword,
                    'keyfiles': keyfiles}
-        self.http_post('/wallet/siagkey', payload)
+        return self.http_post('/wallet/siagkey', payload)
 
     def lock_wallet(self):
         """Locks the wallet."""
-        self.http_post('/wallet/lock')
+        return self.http_post('/wallet/lock')
 
     def get_transaction(self, transaction_id):
+        """Gets the transaction associated with a specific transaction id
+        """
         return self.http_get('/wallet/transaction/' + transaction_id).get('transaction')
 
     def get_transactions(self, startheight, endheight):
+        """Returns a list of transactions related to the wallet in chronological order
+        """
         return self.http_get('/wallet/transactions?startheight=%d&endheight=%d' % (startheight, endheight))
 
     def get_transactions_related(self, address):
@@ -283,11 +334,28 @@ class Sia:
     def unlock_wallet(self, encryptionpassword):
         """Unlocks the wallet."""
         payload = {'encryptionpassword': encryptionpassword}
-        self.http_post('/wallet/unlock', payload)
+        return self.http_post('/wallet/unlock', payload)
+
+    def verify_address(self, address):
+        """Returns if the given address is valid
+        """
+        return self.http_get('/wallet/verify/address/' + address).get('Valid')
+
+    def change_password(self, encryptionpassword, newpassword):
+        """Changes the wallet's encryption key
+        """
+        payload = {'encryptionpassword': encryptionpassword,
+                   'newpassword': newpassword}
+        return self.http_post('/wallet/changepassword', payload)
 
 
 class SiaError(Exception):
+    """Exception raised when errors returned from sia daemon
+    """
     def __init__(self, status_code, message):
+        super(SiaError, self).__init__(message)
         self.status_code = status_code
         self.message = message
 
+    def __str__(self):
+        return 'HTTP code: ' + repr(self.status_code) + ' With message: ' + repr(self.message)
