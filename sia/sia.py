@@ -1,5 +1,6 @@
 import requests
 
+
 class Sia:
     address = 'http://localhost'
     port = 9980
