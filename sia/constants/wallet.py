@@ -1,0 +1,20 @@
+"""
+Provide constants for wallet endpoint.
+"""
+INFO_URL = '/wallet'
+V_033X_URL = '/wallet/033x'
+ADDRESS_URL = '/wallet/address'
+ADDRESS_LIST_URL = '/wallet/addresses'
+BACKUP_URL = '/wallet/backup'
+INIT_URL = '/wallet/init'
+SEED_URL = '/wallet/seed'
+SEEDS_URL = '/wallet/seeds'
+SIACOINS_URL = '/wallet/siacoins'
+SIAFUNDS_URL = '/wallet/siacfunds'
+SIAGKEY_URL = '/wallet/siagkey'
+LOCK_URL = '/wallet/lock'
+UNLOCK_URL = '/wallet/unlock'
+TRANSACTION_URL = '/wallet/transaction/'
+TRANSACTIONS_URL = '/wallet/transactions/'
+VERIFY_URL = '/wallet/verify/address/'
+CHANGE_PASSWORD_URL = '/wallet/changepassword'

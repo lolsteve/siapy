@@ -1,5 +1,7 @@
-from sia.sia import Sia
-
+"""
+Provide methainfo about Sia-package.
+"""
+from sia.sia import Sia  # noqa: F401
 
 __authors__ = 'Dmytro Striletskyi, Alexander Ruban'
 __emails__ = 'dmytro.striletskyi@gmail, alexander.ruban98@gmail.com'

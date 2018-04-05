@@ -1,5 +1,5 @@
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 
@@ -15,7 +15,8 @@ setup(
     description='Sia API wrapper written in Python.',
     download_url='https://github.com/essentiaone/essentia-sia-api/archive/master.zip',
     license='MIT',
-    packages=['sia'],
+    packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         'requests>=2.18.4',
     ],
